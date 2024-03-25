@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+<h1>Register</h1>
+{% if message %}
+    <p style="color: crimson">{{ message }}</p>
+{% endif %}
+<form method="post" action="/register">
+    <label for="username">Username:</label>
+    <input type="text" name="username" id="username" placeholder="Username" required>
+    <br>
+    <label for="password">Password:</label>
+    <input type="password" name="password" id="password" placeholder="Password" required>
+    <br>
+    <label for="confirm">Confirm Password:</label>
+    <input type="password" name="confirm" id="confirm" placeholder="Confirm Password" required>
+    <br>
+
+    <label for="status">Choose a role:</label>
+
+    <select name="status" id="status">
+        {% for status in status_list %}
+        <option value="{{status.id}}">{{status.status_name}}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <label for="email">Email:</label>
+    <input type="email" name="email" id="email" placeholder="Email" required>
+    <br>
+    <label for="name">Name:</label>
+    <input type="text" name="name" id="name" placeholder="Name" required>
+    <br>
+    <label for="surname">Surname:</label>
+    <input type="text" name="surname" id="surname" placeholder="Surname" required>
+    <br>
+    <label for="phone_number">Phone number:</label>
+    <input type="text" name="phone_number" id="phone_number" placeholder="Phone number" required>
+    <br>
+    <label for="birthday">Birthday:</label>
+    <input type="date" name="birthday" id="birthday" placeholder="Birthday" required>
+    <br>
+    <input type="submit" value="Register">
+</form>
+</body>
+</html>
