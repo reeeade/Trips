@@ -1,0 +1,23 @@
+services:
+  server:
+    build: .
+    ports:
+      - 5002:5002
+    environment:
+      - DB_HOSTNAME=db
+      - DB_NAME=postgres
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=mypassword
+      - DB_PORT=5432
+    depends_on:
+      - db
+    command: python app.py
+
+  db:
+    image: postgres
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=mypassword
+    ports:
+      - 5432:5432
+    hostname: db
