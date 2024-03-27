@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your profile</title>
+</head>
+<body>
+    <h1>Your profile</h1>
+    {% if message %}
+    <p style="color: forestgreen">{{message}}</p>
+    {% endif %}
+    <form method="post" action="/edit_user">
+        <label for="name">Name:</label>
+        <input type="text" name="name" id="name" placeholder="Name" required value="{{ user.name }}">
+        <br>
+        <label for="surname">Surname:</label>
+        <input type="text" name="surname" id="surname" placeholder="Surname" required value="{{ user.surname }}">
+        <br>
+        <label for="phone_number">Phone number:</label>
+        <input type="text" name="phone_number" id="phone_number" placeholder="Phone number" required value="{{ user.phone_number }}">
+        <br>
+        <label for="birthday">Birthday:</label>
+        <input type="date" name="birthday" id="birthday" placeholder="Birthday" required value="{{ user.birthday }}">
+        <br>
+        <input type="submit" value="Edit">
+    </form>
+    <form method="get" action="/delete_user">
+        <input type="submit" value="Delete user">
+    </form>
+    <form method="get" action="/logout">
+        <input type="submit" value="Logout">
+    </form>
+    <form method="get" action="/edit_password">
+        <input type="submit" value="Edit password">
+    </form>
+</body>
+</html>

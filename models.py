@@ -27,14 +27,19 @@ class Travels(Base):
     price = Column(Integer, nullable=False)
     driver_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     current_number_of_seats = Column(Integer, nullable=False)
-    total_number_of_seats = Column(Integer, nullable=False)
-    forbidden_id = Column(Integer, ForeignKey('forbidden.id'), nullable=False)
 
 
 class Forbidden(Base):
     __tablename__ = 'forbidden'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     forbidden_name = Column(String, nullable=False)
+
+
+class ForbiddenOfTravel(Base):
+    __tablename__ = 'forbidden_of_travel'
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    travel_id = Column(Integer, ForeignKey('travels.id'), nullable=False)
+    forbidden_id = Column(Integer, ForeignKey('forbidden.id'), nullable=False)
 
 
 class StatusName(Base):
@@ -73,3 +78,4 @@ class Cities(Base):
     __tablename__ = 'cities'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     city_name = Column(String, nullable=False)
+    region = Column(String, nullable=False)
