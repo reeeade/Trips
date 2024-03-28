@@ -1,6 +1,8 @@
 import datetime
 
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, render_template, request, session, redirect, url_for
+from sqlalchemy import select
+from sqlalchemy.orm import aliased
 
 import database
 import models
@@ -10,8 +12,8 @@ app.config['SECRET_KEY'] = 'super_secret_key'
 
 
 @app.route('/')
-def hello_world():  # put application's code here
-    return 'Hello World!'
+def hello_world():
+    return redirect('/travels')
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -123,21 +125,48 @@ def edit_password():
 
 @app.route('/travels', methods=['GET', 'POST'])
 def travels():
-    current_username = session['username']
-    user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    user = None
+    current_username = session.get('username')
+    if current_username:
+        user = database.db_session.query(models.User).filter_by(username=current_username).first()
     database.init_db()
-    travel = (database.db_session.query(models.Travels, models.Cities, models.User, models).
-              join(models.Cities, models.Cities.id == models.Travels.from_city).
-              join(models.Cities, models.Cities.id == models.Travels.to_city).
-              join(models.User, models.User.id == models.Travels.driver_id))
-    city_list = database.db_session.query.order_by(models.Cities.city_name).all()
+    city_list = database.db_session.query(models.Cities).order_by(models.Cities.city_name).all()
+    region_set = database.db_session.query(models.Cities.region).order_by(models.Cities.region).distinct().all()
+    region_set = [region[0] for region in region_set]
+    if request.method == 'GET':
+        return render_template('travels.html', region_set=region_set, city_list=city_list, user=user)
     from_city = request.form.get('from_city')
     to_city = request.form.get('to_city')
+    date = request.form.get('date')
+    return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date))
+
+
+@app.route('/all_find_travels', methods=['GET', 'POST'])
+def all_find_travels():
+    database.init_db()
+    from_city_alias = aliased(models.Cities)
+    to_city_alias = aliased(models.Cities)
+
+    travel = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User)
+              .join(from_city_alias, from_city_alias.id == models.Travels.from_city)
+              .join(to_city_alias, to_city_alias.id == models.Travels.to_city)
+              .join(models.User, models.User.id == models.Travels.driver_id))
+
+    from_city = request.args.get('from_city')
+    to_city = request.args.get('to_city')
+    date = request.args.get('date')
+
     if from_city:
-        travel = travel.filter(models.Travels.from_city == from_city)
+        from_city_id = database.db_session.query(models.Cities.id).filter_by(city_name=from_city).first()[0]
+        travel = travel.filter(models.Travels.from_city == from_city_id)
     if to_city:
-        travel = travel.filter(models.Travels.to_city == to_city)
+        to_city_id = database.db_session.query(models.Cities.id).filter_by(city_name=to_city).first()[0]
+        travel = travel.filter(models.Travels.to_city == to_city_id)
+    if date:
+        travel = travel.filter(models.Travels.date == date)
     travel = travel.all()
+    travel = [travel[0] for travel in travel]
+    return render_template('all_find_travels.html', travels=travel)
 
 
 if __name__ == '__main__':

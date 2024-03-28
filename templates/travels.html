@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lets go</title>
+</head>
+<body>
+<h1>Select a route and travel time</h1>
+<form action="/all_find_travels" method="get">
+    <label for="from_city">From:</label>
+    <select name="from_city" id="from_city">
+        <option value=""></option>
+        {% for region in region_set %}
+            <optgroup label="{{ region }}">
+                {% for city in city_list %}
+                    {% if city.region == region %}
+                        <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
+
+    <label for="to_city">To:</label>
+    <select name="to_city" id="to_city">
+        <option value=""></option>
+        {% for region in region_set %}
+            <optgroup label="{{ region }}">
+                {% for city in city_list %}
+                    {% if city.region == region %}
+                        <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                    {% endif %}
+                {% endfor %}
+            </optgroup>
+        {% endfor %}
+    </select>
+    <label for="date">Date:</label>
+    <input type="date" name="date" id="date" placeholder="date">
+    <input type="submit" value="Search the trips">
+</form>
+</body>
+</html>
