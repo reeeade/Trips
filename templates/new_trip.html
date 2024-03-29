@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Add trip</title>
+</head>
+<body>
+<h1>Add trip</h1>
+<form method="post" action="/new_trip">
+    <label for="from_city">From:</label>
+    <select name="from_city" id="from_city">
+        {% for city in from_cities %}
+            <option value="{{ city.id }}">{{ city.city_name }}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <label for="to_city">To:</label>
+    <select name="to_city" id="to_city">
+        {% for city in to_cities %}
+            <option value="{{ city.id }}">{{ city.city_name }}</option>
+        {% endfor %}
+    </select>
+    <br>
+    <label for="date">Choose date:</label>
+    <input type="date" name="date" id="date" placeholder="date" required>
+    <br>
+    <label for="distance">Distance:</label>
+    <input type="number" name="distance" id="distance" placeholder="distance" required>
+    <br>
+    <label for="price">Put the price:</label>
+    <input type="number" name="price" id="price" placeholder="price" required>
+    <br>
+    <label for="description">Description:</label>
+    <input type="text" name="description" id="description" placeholder="description">
+    <br>
+    <input type="submit" value="Add trip">
+
+</form>
+</body>
+</html>

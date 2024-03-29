@@ -1,4 +1,5 @@
 import datetime
+import random
 
 from flask import Flask, render_template, request, session, redirect, url_for
 from sqlalchemy import select
@@ -101,7 +102,33 @@ def edit_user():
     user.phone_number = phone_number
     user.birthday = birthday
     database.db_session.commit()
-    return render_template('edit_user.html', user=user)
+    message = 'User updated successfully'
+    return render_template('edit_user.html', user=user, message=message)
+
+
+@app.route('/edit_car', methods=['GET', 'POST'])
+def edit_car():
+    current_username = session['username']
+    database.init_db()
+    user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    car = database.db_session.query(models.Cars).filter_by(user_id=user.id).first()
+    if request.method == 'GET':
+        return render_template('edit_car.html', user=user, car=car)
+    car_name = request.form.get('car_name')
+    car_model = request.form.get('car_model')
+    car_year = request.form.get('car_year')
+    car_color = request.form.get('car_color')
+    avg_speed = request.form.get('avg_speed')
+    total_seats = request.form.get('total_seats')
+    car.car_name = car_name
+    car.car_model = car_model
+    car.car_year = car_year
+    car.car_color = car_color
+    car.avg_speed = avg_speed
+    car.number_of_seats = total_seats
+    database.db_session.commit()
+    message = 'Car updated successfully'
+    return render_template('edit_user.html', user=user, message=message)
 
 
 @app.route('/edit_password', methods=['GET', 'POST'])
@@ -147,26 +174,70 @@ def all_find_travels():
     from_city_alias = aliased(models.Cities)
     to_city_alias = aliased(models.Cities)
 
-    travel = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User)
-              .join(from_city_alias, from_city_alias.id == models.Travels.from_city)
-              .join(to_city_alias, to_city_alias.id == models.Travels.to_city)
-              .join(models.User, models.User.id == models.Travels.driver_id))
+    travel_query = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User, models.Cars)
+                    .join(from_city_alias, from_city_alias.id == models.Travels.from_city)
+                    .join(to_city_alias, to_city_alias.id == models.Travels.to_city)
+                    .join(models.User, models.User.id == models.Travels.driver_id)
+                    .join(models.Cars, models.Cars.id == models.Travels.car_id))
 
     from_city = request.args.get('from_city')
     to_city = request.args.get('to_city')
     date = request.args.get('date')
+    message = int(request.args.get('message'))
 
+    if message == 1:
+        message = 'Trip added successfully'
     if from_city:
-        from_city_id = database.db_session.query(models.Cities.id).filter_by(city_name=from_city).first()[0]
-        travel = travel.filter(models.Travels.from_city == from_city_id)
+        travel_query = travel_query.filter(models.Travels.from_city == from_city)
     if to_city:
-        to_city_id = database.db_session.query(models.Cities.id).filter_by(city_name=to_city).first()[0]
-        travel = travel.filter(models.Travels.to_city == to_city_id)
+        travel_query = travel_query.filter(models.Travels.to_city == to_city)
     if date:
-        travel = travel.filter(models.Travels.date == date)
-    travel = travel.all()
-    travel = [travel[0] for travel in travel]
-    return render_template('all_find_travels.html', travels=travel)
+        travel_query = travel_query.filter(models.Travels.date == date)
+    trips = travel_query.all()
+
+    travels_data = []
+    for travel in trips:
+        travel_time = travel[0].distance / travel[4].avg_speed
+        travel_data = {'travel_time': travel_time}
+        for obj in travel:
+            if hasattr(obj, 'to_dict'):
+                obj_dict = obj.to_dict()
+                for key, value in obj_dict.items():
+                    if key in travel_data:
+                        travel_data[f"{obj.__class__.__name__}_{key}"] = value
+                    else:
+                        travel_data[key] = value
+        travels_data.append(travel_data)
+
+    return render_template('all_find_travels.html', travels=travels_data, message=message)
+
+
+@app.route('/new_trip', methods=['GET', 'POST'])
+def new_trip():
+    current_username = session.get('username')
+    user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    car = database.db_session.query(models.Cars).filter_by(user_id=user.id).first()
+    database.init_db()
+    from_cities = database.db_session.query(models.Cities).all()
+    to_cities = database.db_session.query(models.Cities).all()
+    random.shuffle(from_cities)
+    random.shuffle(to_cities)
+    if request.method == 'GET':
+        return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities)
+    from_city = request.form.get('from_city')
+    to_city = request.form.get('to_city')
+    date = request.form.get('date')
+    distance = request.form.get('distance')
+    price = request.form.get('price')
+    description = request.form.get('description')
+    driver_id = user.id
+    car_id = car.id
+    travel = models.Travels(from_city=from_city, to_city=to_city, date=date, price=price, driver_id=driver_id,
+                            car_id=car_id, description=description, distance=distance)
+    database.db_session.add(travel)
+    database.db_session.commit()
+    message = 1
+    return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date, message=message))
 
 
 if __name__ == '__main__':

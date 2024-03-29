@@ -33,5 +33,10 @@
     <form method="get" action="/edit_password">
         <input type="submit" value="Edit password">
     </form>
+    {% if user.status == 1 %}
+    <form method="get" action="/edit_car">
+        <input type="submit" value="Your car">
+    </form>
+    {% endif %}
 </body>
 </html>

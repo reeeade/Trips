@@ -14,7 +14,7 @@
             <optgroup label="{{ region }}">
                 {% for city in city_list %}
                     {% if city.region == region %}
-                        <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                        <option value="{{ city.id }}">{{ city.city_name }}</option>
                     {% endif %}
                 {% endfor %}
             </optgroup>
@@ -28,7 +28,7 @@
             <optgroup label="{{ region }}">
                 {% for city in city_list %}
                     {% if city.region == region %}
-                        <option value="{{ city.city_name }}">{{ city.city_name }}</option>
+                        <option value="{{ city.id }}">{{ city.city_name }}</option>
                     {% endif %}
                 {% endfor %}
             </optgroup>
@@ -38,5 +38,11 @@
     <input type="date" name="date" id="date" placeholder="date">
     <input type="submit" value="Search the trips">
 </form>
+<br>
+{% if user.status == 1 %}
+    <form action="/new_trip" method="get">
+        <input type="submit" value="New trip">
+    </form>
+{% endif %}
 </body>
 </html>

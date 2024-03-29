@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit car</title>
+</head>
+<body>
+    <h1>Edit car</h1>
+    {% if message %}
+    <p style="color: forestgreen">{{message}}</p>
+    {% endif %}
+    <form action="/edit_car" method="post">
+        <input type="hidden" value="{{ user.id }}" name="user_id">
+        <label for="car_name">Car name:</label>
+        <input type="text" name="car_name" id="car_name" placeholder="Car name" required value="{{ car.car_name }}">
+        <br>
+        <label for="car_model">Car model:</label>
+        <input type="text" name="car_model" id="car_model" placeholder="Car model" required value="{{ car.car_model }}">
+        <br>
+        <label for="car_year">Car year:</label>
+        <input type="text" name="car_year" id="car_year" placeholder="Car year" required value="{{ car.car_year }}">
+        <br>
+        <label for="car_color">Car color:</label>
+        <input type="text" name="car_color" id="car_color" placeholder="Car color" required value="{{ car.car_color }}">
+        <br>
+        <label for="avg_speed">Avg speed:</label>
+        <input type="number" name="avg_speed" id="avg_speed" placeholder="Avg speed" required value="{{ car.avg_speed }}">
+        <br>
+        <label for="total_number_of_seats">Total seats number:</label>
+        <input type="number" name="total_seats" id="total_seats" placeholder="Total seats number" required value="{{ car.total_number_of_seats }}">
+        <br>
+        <input type="submit" value="Edit">
+    </form>
+    <form method="get" action="/edit_user">
+        <input type="submit" value="Back">
+    </form>
+</body>
+</html>
