@@ -197,7 +197,7 @@ def all_find_travels():
 
     travels_data = []
     for travel in trips:
-        travel_time = travel[0].distance / travel[4].avg_speed
+        travel_time = round(travel[0].distance / travel[4].avg_speed, 2)
         travel_data = {'travel_time': travel_time}
         for obj in travel:
             if hasattr(obj, 'to_dict'):
