@@ -7,7 +7,7 @@
 <body>
 <h1>Your trips</h1>
 {% if message %}
-    <p style="color: forestgreen">{{message}}</p>
+    <p style="color: forestgreen">{{ message }}</p>
 {% endif %}
 <form action="/edit_user" method="get">
     <input type="submit" value="Back">
@@ -19,31 +19,43 @@
         <th>Date</th>
         <th>Route</th>
         {% if user.status == 1 %}
-        <th>Passengers</th>
+            <th>Passengers</th>
         {% else %}
-        <th>Driver name</th>
-        <th>Driver surname</th>
-        <th>Driver phone number</th>
-        <th>Driver car</th>
+            <th>Driver name</th>
+            <th>Driver surname</th>
+            <th>Driver phone number</th>
+            <th>Driver car</th>
         {% endif %}
     </tr>
     {% for trip in data_for_template %}
-    <tr>
+        <tr>
         <td>{{ trip.id }}</td>
         <td>{{ trip.date }}</td>
-        <td>{{ trip.from_city}} - {{ trip.to_city }}</td>
+        <td>{{ trip.from_city }} - {{ trip.to_city }}</td>
         {% if user.status == 1 %}
-        <td>
-            {% for passenger in trip.passengers %}
-            {{ passenger.number }}.{{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
-                <br>
-            {% endfor %}
-        </td>
+            <td>
+                {% for passenger in trip.passengers %}
+                    {{ passenger.number }}.{{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
+                    <br>
+                {% endfor %}
+            </td>
+            <td>
+                <form action="/delete_trip" method="post">
+                    <input type="hidden" value="{{ trip.id }}" name="trip_id">
+                    <input type="submit" value="Delete">
+                </form>
+            </td>
         {% else %}
-        <td>{{ trip.driver_name }}</td>
-        <td>{{ trip.driver_surname }}</td>
-        <td>{{ trip.driver_phone_number }}</td>
-        <td>{{ trip.driver_car_name }} {{ trip.driver_car_model }} {{ trip.driver_car_color }}</td>
+            <td>{{ trip.driver_name }}</td>
+            <td>{{ trip.driver_surname }}</td>
+            <td>{{ trip.driver_phone_number }}</td>
+            <td>{{ trip.driver_car_name }} {{ trip.driver_car_model }} {{ trip.driver_car_color }}</td>
+            <td>
+                <form action="/delete_trip" method="post">
+                    <input type="hidden" value="{{ trip.id }}" name="trip_id">
+                    <input type="submit" value="Refuse">
+                </form>
+            </td>
         {% endif %}
     {% endfor %}
 </table>

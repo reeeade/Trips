@@ -2,7 +2,6 @@ import datetime
 import random
 
 from flask import Flask, render_template, request, session, redirect, url_for
-from sqlalchemy import select
 from sqlalchemy.orm import aliased
 
 import database
@@ -21,7 +20,6 @@ def hello_world():
 def register():
     database.init_db()
     status_list = database.db_session.query(models.StatusName).all()
-    message = None
     if request.method == 'GET':
         return render_template('register.html', status_list=status_list)
     username = request.form.get('username')
@@ -275,8 +273,14 @@ def new_trip():
 @app.route('/user_trips', methods=['GET', 'POST'])
 def user_trips():
     current_username = session.get('username')
-    driver = None
     user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    message = request.args.get('message')
+    if message:
+        message = int(message)
+        if message == 1:
+            message = 'Trip delete successfully'
+        if message == 2:
+            message = 'You successfully canceled your trip'
     if user.status == 1:
         data_for_template = []
         trips = database.db_session.query(models.Travels).filter_by(driver_id=user.id).all()
@@ -294,7 +298,7 @@ def user_trips():
                              'phone_number': passengers[j][1].phone_number}
                 travel['passengers'].append(passenger)
             data_for_template.append(travel)
-        return render_template('user_trips.html', data_for_template=data_for_template, user=user)
+        return render_template('user_trips.html', data_for_template=data_for_template, user=user, message=message)
     else:
         data_for_template = []
         user_trips_obj = (database.db_session.query(models.UserTrips, models.Travels).join(
@@ -313,7 +317,30 @@ def user_trips():
                       'driver_car_name': driver[1].car_name, 'driver_car_model': driver[1].car_model,
                       'driver_car_color': driver[1].car_color}
             data_for_template.append(travel)
-        return render_template('user_trips.html', data_for_template=data_for_template, user=user)
+        return render_template('user_trips.html', data_for_template=data_for_template, user=user, message=message)
+
+
+@app.route('/delete_trip', methods=['GET', 'POST'])
+def delete_trip():
+    current_username = session.get('username')
+    user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    if user.status == 1:
+        trip_id = request.form.get('trip_id')
+        trip = database.db_session.query(models.Travels).filter_by(id=trip_id).first()
+        database.db_session.delete(trip)
+        database.db_session.commit()
+        message = 1
+        return redirect(url_for('user_trips', message=message))
+    else:
+        trip_id = request.form.get('trip_id')
+        user_trip = database.db_session.query(models.UserTrips).filter_by(trip_id=trip_id, user_id=user.id).first()
+        database.db_session.delete(user_trip)
+        travel = database.db_session.query(models.Travels).filter_by(id=trip_id).first()
+        travel.current_number_of_seats -= 1
+        database.db_session.commit()
+        message = 2
+        return redirect(url_for('user_trips', message=message))
+
 
 
 if __name__ == '__main__':
