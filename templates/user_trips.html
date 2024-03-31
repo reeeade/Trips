@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Your trips</title>
+</head>
+<body>
+<h1>Your trips</h1>
+{% if message %}
+    <p style="color: forestgreen">{{message}}</p>
+{% endif %}
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Date</th>
+        <th>Route</th>
+        {% if user.status == 1 %}
+        <th>Passengers</th>
+        {% else %}
+        <th>Driver name</th>
+        <th>Driver surname</th>
+        <th>Driver phone number</th>
+        <th>Driver car</th>
+        {% endif %}
+    </tr>
+    {% for trip in data_for_template %}
+    <tr>
+        <td>{{ trip.id }}</td>
+        <td>{{ trip.date }}</td>
+        <td>{{ trip.from_city}} - {{ trip.to_city }}</td>
+        {% if user.status == 1 %}
+        <td>
+            {% for passenger in trip.passengers %}
+            {{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
+                <br>
+            {% endfor %}
+        </td>
+        {% else %}
+        <td>{{ driver.name }}</td>
+        <td>{{ driver.surname }}</td>
+        <td>{{ driver.phone_number }}</td>
+        <td>{{ driver.car_name }} {{ driver.car_model }} {{ driver.car_color }}</td>
+        {% endif %}
+    {% endfor %}
+</table>
+</body>
+</html>

@@ -165,7 +165,8 @@ def travels():
     from_city = request.form.get('from_city')
     to_city = request.form.get('to_city')
     date = request.form.get('date')
-    return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date))
+    message = 0
+    return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date, message=message))
 
 
 @app.route('/all_find_travels', methods=['GET', 'POST'])
@@ -173,7 +174,25 @@ def all_find_travels():
     database.init_db()
     from_city_alias = aliased(models.Cities)
     to_city_alias = aliased(models.Cities)
-
+    current_username = session.get('username')
+    user = None
+    if current_username:
+        user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        trip_id = request.form.get('trip_id')
+        trip_in_user_trip = database.db_session.query(models.UserTrips).filter_by(user_id=user_id,
+                                                                                  trip_id=trip_id).first()
+        if trip_in_user_trip is None:
+            user_trip = models.UserTrips(user_id=user_id, trip_id=trip_id)
+            database.db_session.add(user_trip)
+            database.db_session.commit()
+            travel = database.db_session.query(models.Travels).filter_by(id=trip_id).first()
+            travel.current_number_of_seats += 1
+            database.db_session.commit()
+            return redirect(url_for('all_find_travels', message=2))
+        else:
+            return redirect(url_for('all_find_travels', message=3))
     travel_query = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User, models.Cars)
                     .join(from_city_alias, from_city_alias.id == models.Travels.from_city)
                     .join(to_city_alias, to_city_alias.id == models.Travels.to_city)
@@ -183,10 +202,15 @@ def all_find_travels():
     from_city = request.args.get('from_city')
     to_city = request.args.get('to_city')
     date = request.args.get('date')
-    message = int(request.args.get('message'))
-
+    message = request.args.get('message')
+    if message:
+        message = int(message)
     if message == 1:
         message = 'Trip added successfully'
+    if message == 2:
+        message = 'You have successfully signed up for a trip'
+    if message == 3:
+        message = 'You have already signed up for this trip'
     if from_city:
         travel_query = travel_query.filter(models.Travels.from_city == from_city)
     if to_city:
@@ -209,7 +233,7 @@ def all_find_travels():
                         travel_data[key] = value
         travels_data.append(travel_data)
 
-    return render_template('all_find_travels.html', travels=travels_data, message=message)
+    return render_template('all_find_travels.html', travels=travels_data, message=message, user=user)
 
 
 @app.route('/new_trip', methods=['GET', 'POST'])
@@ -233,11 +257,35 @@ def new_trip():
     driver_id = user.id
     car_id = car.id
     travel = models.Travels(from_city=from_city, to_city=to_city, date=date, price=price, driver_id=driver_id,
-                            car_id=car_id, description=description, distance=distance)
+                            car_id=car_id, description=description, distance=distance, current_number_of_seats=0)
     database.db_session.add(travel)
     database.db_session.commit()
     message = 1
     return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date, message=message))
+
+
+@app.route('/user_trips', methods=['GET', 'POST'])
+def user_trips():
+    current_username = session.get('username')
+    user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    if user.status == 1:
+        data_for_template = []
+        trips = database.db_session.query(models.Travels).filter_by(driver_id=user.id).all()
+        for i in range(len(trips)):
+            from_city = database.db_session.query(models.Cities.city_name).filter_by(id=trips[i].from_city).first()[0]
+            to_city = database.db_session.query(models.Cities.city_name).filter_by(id=trips[i].to_city).first()[0]
+            travel = {'id': trips[i].id, 'from_city': from_city, 'to_city': to_city,
+                      'date': trips[i].date, 'passengers': []}
+
+            passengers = database.db_session.query(models.UserTrips, models.User).join(
+                models.User, models.UserTrips.user_id == models.User.id)
+            passengers = passengers.filter(models.UserTrips.trip_id == trips[i].id).all()
+            for j in range(len(passengers)):
+                passenger = {'name': passengers[j][1].name, 'surname': passengers[j][1].surname,
+                             'phone_number': passengers[j][1].phone_number}
+                travel['passengers'].append(passenger)
+            data_for_template.append(travel)
+        return render_template('user_trips.html', data_for_template=data_for_template, user=user)
 
 
 if __name__ == '__main__':

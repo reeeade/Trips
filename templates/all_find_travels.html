@@ -16,7 +16,15 @@
     <p>Ориентировочное время в пути: {{ trip.travel_time }} часов</p>
     <p>Машина: {{ trip.car_name }} {{ trip.car_model }} {{ trip.car_color }}</p>
     <p>Цена от водителя: {{ trip.price }} грн.</p>
-        <br>
+    <p>Свободно мест: {{ trip.current_number_of_seats }} / {{ trip.total_number_of_seats }}</p>
+    {% if user.status == 2 %}
+        <form action="/all_find_travels" method="post">
+        <input type="hidden" value="{{ user.id }}" name="user_id">
+        <input type="hidden" value="{{ trip.id }}" name="trip_id">
+        <input type="submit" value="Записаться">
+        </form>
+    {% endif %}
+    <br>
     {% endfor %}
 </body>
 </html>

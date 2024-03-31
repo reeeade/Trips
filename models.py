@@ -39,6 +39,7 @@ class Travels(Base):
     price = Column(Integer, nullable=False)
     driver_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     car_id = Column(Integer, ForeignKey('cars.id'), nullable=False)
+    current_number_of_seats = Column(Integer, nullable=False)
 
     def to_dict(self):
         return {
@@ -50,7 +51,8 @@ class Travels(Base):
             'distance': self.distance,
             'price': self.price,
             'driver_id': self.driver_id,
-            'car_id': self.car_id
+            'car_id': self.car_id,
+            'current_number_of_seats': self.current_number_of_seats
         }
 
 
