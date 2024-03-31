@@ -119,13 +119,18 @@ def edit_car():
     car_year = request.form.get('car_year')
     car_color = request.form.get('car_color')
     avg_speed = request.form.get('avg_speed')
-    total_seats = request.form.get('total_seats')
-    car.car_name = car_name
-    car.car_model = car_model
-    car.car_year = car_year
-    car.car_color = car_color
-    car.avg_speed = avg_speed
-    car.number_of_seats = total_seats
+    total_number_of_seats = request.form.get('total_seats')
+    if car:
+        car.car_name = car_name
+        car.car_model = car_model
+        car.car_year = car_year
+        car.car_color = car_color
+        car.avg_speed = avg_speed
+        car.total_number_of_seats = total_number_of_seats
+    else:
+        car = models.Cars(user_id=user.id, car_name=car_name, car_model=car_model, car_year=car_year,
+                          car_color=car_color, avg_speed=avg_speed, total_number_of_seats=total_number_of_seats)
+        database.db_session.add(car)
     database.db_session.commit()
     message = 'Car updated successfully'
     return render_template('edit_user.html', user=user, message=message)
@@ -248,6 +253,9 @@ def new_trip():
     random.shuffle(to_cities)
     if request.method == 'GET':
         return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities)
+    if car is None:
+        return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities,
+                               message='Add the car first')
     from_city = request.form.get('from_city')
     to_city = request.form.get('to_city')
     date = request.form.get('date')
@@ -267,6 +275,7 @@ def new_trip():
 @app.route('/user_trips', methods=['GET', 'POST'])
 def user_trips():
     current_username = session.get('username')
+    driver = None
     user = database.db_session.query(models.User).filter_by(username=current_username).first()
     if user.status == 1:
         data_for_template = []
@@ -281,9 +290,28 @@ def user_trips():
                 models.User, models.UserTrips.user_id == models.User.id)
             passengers = passengers.filter(models.UserTrips.trip_id == trips[i].id).all()
             for j in range(len(passengers)):
-                passenger = {'name': passengers[j][1].name, 'surname': passengers[j][1].surname,
+                passenger = {'number': j + 1, 'name': passengers[j][1].name, 'surname': passengers[j][1].surname,
                              'phone_number': passengers[j][1].phone_number}
                 travel['passengers'].append(passenger)
+            data_for_template.append(travel)
+        return render_template('user_trips.html', data_for_template=data_for_template, user=user)
+    else:
+        data_for_template = []
+        user_trips_obj = (database.db_session.query(models.UserTrips, models.Travels).join(
+            models.Travels, models.UserTrips.trip_id == models.Travels.id))
+        user_trips_obj = user_trips_obj.filter(models.UserTrips.user_id == user.id).all()
+        for i in range(len(user_trips_obj)):
+            from_city = database.db_session.query(models.Cities.city_name).filter_by(
+                id=user_trips_obj[i][1].from_city).first()[0]
+            to_city = database.db_session.query(models.Cities.city_name).filter_by(
+                id=user_trips_obj[i][1].to_city).first()[0]
+            driver = database.db_session.query(models.User, models.Cars).join(
+                models.User, models.Cars.user_id == models.User.id).filter_by(id=user_trips_obj[i][1].driver_id).first()
+            travel = {'id': user_trips_obj[i][1].id, 'from_city': from_city, 'to_city': to_city,
+                      'date': user_trips_obj[i][1].date, 'driver_name': driver[0].name,
+                      'driver_surname': driver[0].surname, 'driver_phone_number': driver[0].phone_number,
+                      'driver_car_name': driver[1].car_name, 'driver_car_model': driver[1].car_model,
+                      'driver_car_color': driver[1].car_color}
             data_for_template.append(travel)
         return render_template('user_trips.html', data_for_template=data_for_template, user=user)
 

@@ -6,6 +6,13 @@
 </head>
 <body>
 <h1>Add trip</h1>
+{% if message %}
+    <p style="color: forestgreen">{{message}}</p>
+    <form action="/edit_car" method="get">
+    <input type="submit" value="Add car">
+    </form>
+    <br>
+{% endif %}
 <form method="post" action="/new_trip">
     <label for="from_city">From:</label>
     <select name="from_city" id="from_city">

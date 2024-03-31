@@ -9,9 +9,13 @@
 {% if message %}
     <p style="color: forestgreen">{{message}}</p>
 {% endif %}
+<form action="/edit_user" method="get">
+    <input type="submit" value="Back">
+</form>
+<br>
 <table>
     <tr>
-        <th>ID</th>
+        <th>Trips №</th>
         <th>Date</th>
         <th>Route</th>
         {% if user.status == 1 %}
@@ -31,15 +35,15 @@
         {% if user.status == 1 %}
         <td>
             {% for passenger in trip.passengers %}
-            {{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
+            {{ passenger.number }}.{{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
                 <br>
             {% endfor %}
         </td>
         {% else %}
-        <td>{{ driver.name }}</td>
-        <td>{{ driver.surname }}</td>
-        <td>{{ driver.phone_number }}</td>
-        <td>{{ driver.car_name }} {{ driver.car_model }} {{ driver.car_color }}</td>
+        <td>{{ trip.driver_name }}</td>
+        <td>{{ trip.driver_surname }}</td>
+        <td>{{ trip.driver_phone_number }}</td>
+        <td>{{ trip.driver_car_name }} {{ trip.driver_car_model }} {{ trip.driver_car_color }}</td>
         {% endif %}
     {% endfor %}
 </table>
