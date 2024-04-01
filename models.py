@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, Date
+from sqlalchemy import Column, Integer, String, ForeignKey, Date, Float
 from database import Base
 
 
@@ -72,13 +72,13 @@ class ForbiddenOfTravel(Base):
     __tablename__ = 'forbidden_of_travel'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     travel_id = Column(Integer, ForeignKey('travels.id'), nullable=False)
-    forbidden_id = Column(Integer, ForeignKey('forbidden.id'), nullable=False)
+    list_of_forbidden_id = Column(String, nullable=False)
 
     def to_dict(self):
         return {
             'id': self.id,
             'travel_id': self.travel_id,
-            'forbidden_id': self.forbidden_id
+            'list_of_forbidden_id': self.list_of_forbidden_id
         }
 
 
@@ -122,13 +122,29 @@ class Ratings(Base):
     __tablename__ = 'ratings'
     id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    value = Column(Integer, nullable=False)
+    value = Column(Float, nullable=False)
 
     def to_dict(self):
         return {
             'id': self.id,
             'user_id': self.user_id,
             'value': self.value
+        }
+
+
+class UsersRatings(Base):
+    __tablename__ = 'users_ratings'
+    id = Column(Integer, primary_key=True, nullable=False, autoincrement=True)
+    user_who_rated_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    user_to_whom_rated_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    rating = Column(Integer, nullable=False)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_who_rated_id': self.user_who_rated_id,
+            'user_to_whom_rated_id': self.user_to_whom_rated_id,
+            'rating': self.rating
         }
 
 

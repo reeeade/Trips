@@ -42,6 +42,10 @@ def register():
                        phone_number=phone_number, birthday=birthday, status=status)
     database.db_session.add(user)
     database.db_session.commit()
+    rating = models.Ratings(user_id=user.id, value=0)
+    database.db_session.add(rating)
+    database.db_session.commit()
+
     return render_template('login.html', message='User created successfully')
 
 
@@ -85,11 +89,14 @@ def delete_user():
 
 @app.route('/edit_user', methods=['GET', 'POST'])
 def edit_user():
-    current_username = session['username']
+    current_username = session.get('username')
     database.init_db()
     user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    user_rating = database.db_session.query(models.Ratings.value).filter_by(user_id=user.id).first()[0]
+    if user is None:
+        return redirect('/login')
     if request.method == 'GET':
-        return render_template('edit_user.html', user=user)
+        return render_template('edit_user.html', user=user, user_rating=user_rating)
     name = request.form.get('name')
     surname = request.form.get('surname')
     phone_number = request.form.get('phone_number')
@@ -101,7 +108,7 @@ def edit_user():
     user.birthday = birthday
     database.db_session.commit()
     message = 'User updated successfully'
-    return render_template('edit_user.html', user=user, message=message)
+    return render_template('edit_user.html', user=user, message=message, user_rating=user_rating)
 
 
 @app.route('/edit_car', methods=['GET', 'POST'])
@@ -196,11 +203,13 @@ def all_find_travels():
             return redirect(url_for('all_find_travels', message=2))
         else:
             return redirect(url_for('all_find_travels', message=3))
-    travel_query = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User, models.Cars)
+    travel_query = (database.db_session.query(models.Travels, from_city_alias, to_city_alias, models.User, models.Cars,
+                                              models.Ratings)
                     .join(from_city_alias, from_city_alias.id == models.Travels.from_city)
                     .join(to_city_alias, to_city_alias.id == models.Travels.to_city)
                     .join(models.User, models.User.id == models.Travels.driver_id)
-                    .join(models.Cars, models.Cars.id == models.Travels.car_id))
+                    .join(models.Cars, models.Cars.id == models.Travels.car_id)
+                    .join(models.Ratings, models.Ratings.user_id == models.Travels.driver_id))
 
     from_city = request.args.get('from_city')
     to_city = request.args.get('to_city')
@@ -225,7 +234,14 @@ def all_find_travels():
     travels_data = []
     for travel in trips:
         travel_time = round(travel[0].distance / travel[4].avg_speed, 2)
-        travel_data = {'travel_time': travel_time}
+        travel_data = {'travel_time': travel_time, 'forbidden_of_trip': []}
+        forbidden_of_trip = database.db_session.query(models.ForbiddenOfTravel.list_of_forbidden_id).filter_by(
+            travel_id=travel[0].id).first()
+        if forbidden_of_trip is not None:
+            forbidden_of_trip = forbidden_of_trip[0].replace('{', '').replace('}', '').split(',')
+            for forbidden_id in forbidden_of_trip:
+                forbid = database.db_session.query(models.Forbidden).filter_by(id=forbidden_id).first()
+                travel_data['forbidden_of_trip'].append(forbid.forbidden_name)
         for obj in travel:
             if hasattr(obj, 'to_dict'):
                 obj_dict = obj.to_dict()
@@ -234,7 +250,10 @@ def all_find_travels():
                         travel_data[f"{obj.__class__.__name__}_{key}"] = value
                     else:
                         travel_data[key] = value
-        travels_data.append(travel_data)
+        if travel[0].current_number_of_seats == travel[4].total_number_of_seats:
+            travel_data = None
+        else:
+            travels_data.append(travel_data)
 
     return render_template('all_find_travels.html', travels=travels_data, message=message, user=user)
 
@@ -249,17 +268,20 @@ def new_trip():
     to_cities = database.db_session.query(models.Cities).all()
     random.shuffle(from_cities)
     random.shuffle(to_cities)
+    list_of_forbidden = database.db_session.query(models.Forbidden).all()
     if request.method == 'GET':
-        return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities)
+        return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities,
+                               list_of_forbidden=list_of_forbidden)
     if car is None:
         return render_template('new_trip.html', from_cities=from_cities, to_cities=to_cities,
-                               message='Add the car first')
+                               message='Add the car first', list_of_forbidden=list_of_forbidden)
     from_city = request.form.get('from_city')
     to_city = request.form.get('to_city')
     date = request.form.get('date')
     distance = request.form.get('distance')
     price = request.form.get('price')
     description = request.form.get('description')
+    forbidden = request.form.getlist('forbidden')
     driver_id = user.id
     car_id = car.id
     travel = models.Travels(from_city=from_city, to_city=to_city, date=date, price=price, driver_id=driver_id,
@@ -267,6 +289,9 @@ def new_trip():
     database.db_session.add(travel)
     database.db_session.commit()
     message = 1
+    forbidden_of_trip = models.ForbiddenOfTravel(travel_id=travel.id, list_of_forbidden_id=forbidden)
+    database.db_session.add(forbidden_of_trip)
+    database.db_session.commit()
     return redirect(url_for('all_find_travels', from_city=from_city, to_city=to_city, date=date, message=message))
 
 
@@ -281,6 +306,10 @@ def user_trips():
             message = 'Trip delete successfully'
         if message == 2:
             message = 'You successfully canceled your trip'
+        if message == 3:
+            message = 'You have successfully rated the user'
+        if message == 4:
+            message = 'You have updated your rating'
     if user.status == 1:
         data_for_template = []
         trips = database.db_session.query(models.Travels).filter_by(driver_id=user.id).all()
@@ -290,12 +319,14 @@ def user_trips():
             travel = {'id': trips[i].id, 'from_city': from_city, 'to_city': to_city,
                       'date': trips[i].date, 'passengers': []}
 
-            passengers = database.db_session.query(models.UserTrips, models.User).join(
-                models.User, models.UserTrips.user_id == models.User.id)
+            passengers = database.db_session.query(models.UserTrips, models.User, models.Ratings).join(
+                models.User, models.UserTrips.user_id == models.User.id).join(
+                models.Ratings, models.Ratings.user_id == models.User.id)
             passengers = passengers.filter(models.UserTrips.trip_id == trips[i].id).all()
             for j in range(len(passengers)):
-                passenger = {'number': j + 1, 'name': passengers[j][1].name, 'surname': passengers[j][1].surname,
-                             'phone_number': passengers[j][1].phone_number}
+                passenger = {'number': j + 1, 'user_id': passengers[j][1].id, 'name': passengers[j][1].name,
+                             'surname': passengers[j][1].surname,
+                             'phone_number': passengers[j][1].phone_number, 'rating': passengers[j][2].value}
                 travel['passengers'].append(passenger)
             data_for_template.append(travel)
         return render_template('user_trips.html', data_for_template=data_for_template, user=user, message=message)
@@ -309,13 +340,15 @@ def user_trips():
                 id=user_trips_obj[i][1].from_city).first()[0]
             to_city = database.db_session.query(models.Cities.city_name).filter_by(
                 id=user_trips_obj[i][1].to_city).first()[0]
-            driver = database.db_session.query(models.User, models.Cars).join(
-                models.User, models.Cars.user_id == models.User.id).filter_by(id=user_trips_obj[i][1].driver_id).first()
+            driver = (database.db_session.query(models.User, models.Cars, models.Ratings).join(
+                models.User, models.Cars.user_id == models.User.id).join(
+                models.Ratings, models.Ratings.user_id == models.User.id))
+            driver = driver.filter(models.User.id == user_trips_obj[i][1].driver_id).first()
             travel = {'id': user_trips_obj[i][1].id, 'from_city': from_city, 'to_city': to_city,
-                      'date': user_trips_obj[i][1].date, 'driver_name': driver[0].name,
+                      'date': user_trips_obj[i][1].date, 'driver_name': driver[0].name, 'driver_id': driver[0].id,
                       'driver_surname': driver[0].surname, 'driver_phone_number': driver[0].phone_number,
                       'driver_car_name': driver[1].car_name, 'driver_car_model': driver[1].car_model,
-                      'driver_car_color': driver[1].car_color}
+                      'driver_car_color': driver[1].car_color, 'rating': driver[2].value}
             data_for_template.append(travel)
         return render_template('user_trips.html', data_for_template=data_for_template, user=user, message=message)
 
@@ -341,6 +374,35 @@ def delete_trip():
         message = 2
         return redirect(url_for('user_trips', message=message))
 
+
+@app.route('/rate/<user_id>', methods=['GET', 'POST'])
+def rate(user_id):
+    current_username = session.get('username')
+    current_user = database.db_session.query(models.User).filter_by(username=current_username).first()
+    rated_user = database.db_session.query(models.User).filter_by(id=user_id).first()
+    if request.method == 'GET':
+        return render_template('rate.html', rated_user=rated_user)
+    if current_user.id == user_id:
+        return render_template('rate.html', rated_user=rated_user, message='You cannot rate yourself')
+    rating_obj = models.UsersRatings.query.filter_by(user_who_rated_id=current_user.id,
+                                                     user_to_whom_rated_id=user_id).first()
+    message = 3
+    rating = request.form.get('rating')
+    if rating_obj:
+        rating_obj.rating = rating
+        message = 4
+    else:
+        rating_obj = models.UsersRatings(user_who_rated_id=current_user.id, user_to_whom_rated_id=user_id,
+                                         rating=rating)
+        database.db_session.add(rating_obj)
+    final_rating = database.db_session.query(models.UsersRatings.rating).filter_by(
+        user_to_whom_rated_id=user_id).all()
+    final_rating = round(sum(int(*i) for i in final_rating) / len(final_rating), 1)
+    user_rating = models.Ratings.query.filter_by(user_id=user_id).first()
+    user_rating.value = final_rating
+    database.db_session.commit()
+
+    return redirect(url_for('user_trips', message=message))
 
 
 if __name__ == '__main__':

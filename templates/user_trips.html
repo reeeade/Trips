@@ -13,6 +13,7 @@
     <input type="submit" value="Back">
 </form>
 <br>
+{% if data_for_template %}
 <table>
     <tr>
         <th>Trips №</th>
@@ -26,6 +27,7 @@
             <th>Driver phone number</th>
             <th>Driver car</th>
         {% endif %}
+        <th>Rating</th>
     </tr>
     {% for trip in data_for_template %}
         <tr>
@@ -35,8 +37,20 @@
         {% if user.status == 1 %}
             <td>
                 {% for passenger in trip.passengers %}
-                    {{ passenger.number }}.{{ passenger.name }} {{ passenger.surname }} {{ passenger.phone_number }}
-                    <br>
+                    {{ passenger.number }}.{{ passenger.name }} {{ passenger.surname }} phone:
+                    {{ passenger.phone_number }}<br>
+                {% endfor %}
+            </td>
+            <td>
+                {% for passenger in trip.passengers %}
+                    {{ passenger.rating }} ★<br>
+                {% endfor %}
+            </td>
+            <td>
+                {% for passenger in trip.passengers %}
+                    <form action="/rate/{{ passenger.user_id }}" method="get">
+                        <input type="submit" value="Rate user">
+                    </form>
                 {% endfor %}
             </td>
             <td>
@@ -50,6 +64,12 @@
             <td>{{ trip.driver_surname }}</td>
             <td>{{ trip.driver_phone_number }}</td>
             <td>{{ trip.driver_car_name }} {{ trip.driver_car_model }} {{ trip.driver_car_color }}</td>
+            <td>{{ trip.rating }} ★</td>
+            <td>
+                <form action="/rate/{{ trip.driver_id }}" method="get">
+                    <input type="submit" value="Rate driver">
+                </form>
+            </td>
             <td>
                 <form action="/delete_trip" method="post">
                     <input type="hidden" value="{{ trip.id }}" name="trip_id">
@@ -59,5 +79,8 @@
         {% endif %}
     {% endfor %}
 </table>
+{% else %}
+    <p>You dont have any trips</p>
+{% endif %}
 </body>
 </html>

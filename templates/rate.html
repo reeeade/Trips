@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rate user {{ user_id }}</title>
+</head>
+<body>
+{% if message %}
+<p style="color: forestgreen">{{ message }}</p>
+{% endif %}
+    <h1>Put rating for user {{ rated_user.name }} {{ rated_user.surname }}
+        <form action="/rate/{{ rated_user.id }}" method="post">
+            <label for="1">1</label>
+            <input type="radio" name="rating" value="1" id="1"><br>
+            <label for="2">2</label>
+            <input type="radio" name="rating" value="2" id="2"><br>
+            <label for="3">3</label>
+            <input type="radio" name="rating" value="3" id="3"><br>
+            <label for="4">4</label>
+            <input type="radio" name="rating" value="4" id="4"><br>
+            <label for="5">5</label>
+            <input type="radio" name="rating" value="5" id="5"><br>
+            <input type="submit" value="Rate">
+        </form>
+
+</body>
+</html>

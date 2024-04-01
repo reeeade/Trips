@@ -7,9 +7,9 @@
 <body>
 <h1>Add trip</h1>
 {% if message %}
-    <p style="color: forestgreen">{{message}}</p>
+    <p style="color: forestgreen">{{ message }}</p>
     <form action="/edit_car" method="get">
-    <input type="submit" value="Add car">
+        <input type="submit" value="Add car">
     </form>
     <br>
 {% endif %}
@@ -37,6 +37,11 @@
     <label for="price">Put the price:</label>
     <input type="number" name="price" id="price" placeholder="price" required>
     <br>
+    {% for forbidden in list_of_forbidden %}
+        <label>
+            <input type="checkbox" name="forbidden[]" value="{{ forbidden.id }}">{{ forbidden.forbidden_name }}<br>
+        </label>
+    {% endfor %}
     <label for="description">Description:</label>
     <input type="text" name="description" id="description" placeholder="description">
     <br>

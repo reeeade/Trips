@@ -15,13 +15,24 @@
 {% if message %}
     <p style="color: forestgreen">{{ message }}</p>
 {% endif %}
+{%  if not travels %}
+    <p>No trips yet!</p>
+{% else %}
 {% for trip in travels %}
     <p>Поездка №{{ trip.id }}</p>
-    <p>Водитель {{ trip.name }}</p>
+    <p>Водитель {{ trip.name }} {{ trip.value }} ★</p>
     <p>{{ trip.city_name }} - {{ trip.Cities_city_name }}</p>
     <p>Ориентировочное время в пути: {{ trip.travel_time }} часов</p>
     <p>Машина: {{ trip.car_name }} {{ trip.car_model }} {{ trip.car_color }}</p>
     <p>Цена от водителя: {{ trip.price }} грн.</p>
+    {% if trip.forbidden_of_trip %}
+    <p>Запреты от водителя:</p>
+    <ul>
+        {% for forbidden in trip.forbidden_of_trip %}
+            <li>{{ forbidden }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
     <p>Свободно мест: {{ trip.current_number_of_seats }} / {{ trip.total_number_of_seats }}</p>
     {% if user.status == 2 %}
         <form action="/all_find_travels" method="post">
@@ -32,5 +43,6 @@
     {% endif %}
     <br>
 {% endfor %}
+{% endif %}
 </body>
 </html>

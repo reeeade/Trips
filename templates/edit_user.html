@@ -9,6 +9,7 @@
     {% if message %}
     <p style="color: forestgreen">{{message}}</p>
     {% endif %}
+    <h3>Your rating: {{ user_rating }}/5 ★</h3>
     <form method="post" action="/edit_user">
         <label for="name">Name:</label>
         <input type="text" name="name" id="name" placeholder="Name" required value="{{ user.name }}">
