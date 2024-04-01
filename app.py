@@ -281,7 +281,8 @@ def new_trip():
     distance = request.form.get('distance')
     price = request.form.get('price')
     description = request.form.get('description')
-    forbidden = request.form.getlist('forbidden')
+    forbidden = request.form.getlist('forbidden[]') if 'forbidden[]' in request.form else []
+
     driver_id = user.id
     car_id = car.id
     travel = models.Travels(from_city=from_city, to_city=to_city, date=date, price=price, driver_id=driver_id,
